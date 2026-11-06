@@ -1,0 +1,7 @@
+Claude Architect Exam - Daily Study Checklist
+
+[ ] Review yesterday's notes for 10 minutes
+[ ] Study one topic from exam-topics and write notes in notes/<topic>.md
+[ ] Answer at least 5 practice questions
+[ ] Record weak areas in log.md
+[ ] Commit and push today's work
