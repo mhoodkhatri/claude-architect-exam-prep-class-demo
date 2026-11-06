@@ -20,20 +20,20 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v5
 
-      - name: Fail if any non-Markdown file is in the repo
+      - name: Fail if any file is not Markdown or text
         run: |
-          # Files allowed even though they aren't Markdown.
+          # Files allowed even though they aren't Markdown or text.
           allowed='^(\.gitignore|\.gitattributes|\.claude/settings\.json|\.github/workflows/[^/]+\.ya?ml)$'
 
-          # List every tracked file, drop .md files, drop the allowed exceptions.
-          bad=$(git ls-files | grep -viE '\.md$' | grep -vE "$allowed" || true)
+          # List every tracked file, drop .md and .txt files, drop the allowed exceptions.
+          bad=$(git ls-files | grep -viE '\.(md|txt)$' | grep -vE "$allowed" || true)
 
           if [ -n "$bad" ]; then
-            echo "Only Markdown (.md) files are allowed in this repo."
+            echo "Only Markdown (.md) and text (.txt) files are allowed in this repo."
             echo "$bad" | while read -r f; do
-              echo "::error file=$f::Not a Markdown file: $f"
+              echo "::error file=$f::Not a Markdown or text file: $f"
             done
             exit 1
           fi
 
-          echo "All files are Markdown (or allowed exceptions)."
+          echo "All files are Markdown, text, or allowed exceptions."
