@@ -1,0 +1,5 @@
+resource,type,topic,link
+Anthropic documentation,Docs,All topics,https://docs.anthropic.com
+Claude Code documentation,Docs,Claude Code,https://docs.claude.com/en/docs/claude-code/overview
+Prompt engineering guide,Guide,Prompt design,https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview
+Tool use guide,Guide,Tool use,https://docs.anthropic.com/en/docs/build-with-claude/tool-use
