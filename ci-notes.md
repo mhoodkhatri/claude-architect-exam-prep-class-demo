@@ -6,13 +6,13 @@ Notes on the GitHub Actions workflows in `.github/workflows/`.
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
-| Markdown only | `markdown-only.yml` | Push to `main`; PRs targeting `main` | Fails if any tracked file is not Markdown |
+| Markdown only | `markdown-only.yml` | Push to `main`; PRs targeting `main` | Fails if any tracked file is not Markdown or `.txt` |
 | Claude Code | `claude.yml` | `@claude` in issue/PR comments, review comments, reviews, or issue title/body; issue assigned | Runs Claude Code on request |
 | Claude Code Review | `claude-code-review.yml` | PR opened, synchronized, reopened, or marked ready for review | Automated PR review posted as inline comments |
 
 ## Markdown only
 
-This repo is meant to hold only Markdown notes. The job checks out the code and runs `git ls-files`, drops `.md` files, then drops an allowlist of exceptions. Any file left over fails the job with an `::error` annotation.
+This repo is meant to hold only Markdown notes. The job checks out the code and runs `git ls-files`, drops `.md` and `.txt` files, then drops an allowlist of exceptions. Any file left over fails the job with an `::error` annotation.
 
 Allowed non-Markdown files:
 
