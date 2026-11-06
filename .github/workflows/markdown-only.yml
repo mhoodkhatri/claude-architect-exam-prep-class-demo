@@ -1,0 +1,35 @@
+name: Markdown only
+
+# Run on every push to any branch and on every pull request.
+on:
+  push:
+  pull_request:
+
+# The job only needs to read the code.
+permissions:
+  contents: read
+
+jobs:
+  check-file-types:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Fail if any non-Markdown file is in the repo
+        run: |
+          # Files allowed even though they aren't Markdown.
+          allowed='^(\.gitignore|\.gitattributes|\.claude/settings\.json|\.github/workflows/[^/]+\.ya?ml)$'
+
+          # List every tracked file, drop .md files, drop the allowed exceptions.
+          bad=$(git ls-files | grep -viE '\.md$' | grep -vE "$allowed" || true)
+
+          if [ -n "$bad" ]; then
+            echo "Only Markdown (.md) files are allowed in this repo."
+            echo "$bad" | while read -r f; do
+              echo "::error file=$f::Not a Markdown file: $f"
+            done
+            exit 1
+          fi
+
+          echo "All files are Markdown (or allowed exceptions)."
