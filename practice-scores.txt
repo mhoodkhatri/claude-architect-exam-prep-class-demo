@@ -1,0 +1,5 @@
+Practice Session Scores
+
+Session 1 - Claude API fundamentals - 7/10
+Session 2 - Tool use and agents - 6/10
+Session 3 - Claude Code in CI - 8/10
