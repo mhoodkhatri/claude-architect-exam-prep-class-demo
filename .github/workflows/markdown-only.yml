@@ -1,13 +1,11 @@
 name: Markdown only
 
-# Run only for the main branch:
-# - pushes to main
-# - pull requests that target main
+# Run for every branch:
+# - pushes to any branch
+# - pull requests targeting any branch
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
 
 # The job only needs to read the code.
 permissions:
