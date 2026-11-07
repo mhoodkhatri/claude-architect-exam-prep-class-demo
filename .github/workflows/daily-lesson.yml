@@ -59,7 +59,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_args: >-
             --allowedTools "Read,Write,Edit,Glob,Grep"
-            --max-turns 20
+            --max-turns 2
           prompt: |
             You are writing tonight's study lesson for this repo, which is my prep
             for the Claude Architect certification exam. Today's date is
