@@ -15,22 +15,31 @@ concurrency:
   group: daily-lesson
   cancel-in-progress: false
 
+# The built-in token only needs to read. Pushing the branch and opening the PR
+# use LESSON_BOT_TOKEN (your personal access token), so GitHub sees YOU opening
+# the PR and runs the required check without asking for approval.
 permissions:
-  contents: write       # push the lesson branch
-  pull-requests: write  # open the PR and turn on auto-merge
-  actions: write        # start the Markdown-only check on the lesson branch
+  contents: read
 
 jobs:
   lesson:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.LESSON_BOT_TOKEN }}
     steps:
+      - name: Make sure the LESSON_BOT_TOKEN secret exists
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Add a repo secret named LESSON_BOT_TOKEN (a personal access token). See the setup steps in lessons/README.md."
+            exit 1
+          fi
+
       - name: Check out main
         uses: actions/checkout@v5
         with:
           ref: main
+          token: ${{ secrets.LESSON_BOT_TOKEN }} # later git push uses this token
 
       - name: Work out today's date (Pakistan time)
         id: date
@@ -108,7 +117,7 @@ jobs:
           echo "lesson=$lesson" >> "$GITHUB_OUTPUT"
           echo "title=$(head -n1 "$lesson" | sed 's/^# *//')" >> "$GITHUB_OUTPUT"
 
-      - name: Commit, open an auto-merging PR, and start the Markdown check
+      - name: Commit and open an auto-merging PR
         if: steps.date.outputs.skip != 'true'
         env:
           BRANCH: ${{ steps.date.outputs.branch }}
@@ -128,7 +137,3 @@ jobs:
             --body "Nightly lesson written by Claude Code. New file: \`$LESSON\`. Ticks the topic off in \`syllabus.md\`. Merges itself once the Markdown-only check passes."
 
           gh pr merge "$BRANCH" --auto --squash
-
-          # Changes pushed with GITHUB_TOKEN don't trigger other workflows, so start
-          # the required check ourselves. workflow_dispatch is the one exception GitHub allows.
-          gh workflow run markdown-only.yml --ref "$BRANCH"
