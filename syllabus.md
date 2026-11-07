@@ -7,7 +7,7 @@ Edit freely: reorder, add or remove topics. Keep the `- [ ]` / `- [x]` format so
 ## 1. Agentic architecture and orchestration
 
 - [x] What an agent is: the agentic loop (model → tool call → result → model) → [lesson](lessons/2026-11-07-the-agentic-loop.md)
-- [ ] Workflows vs agents: when a fixed pipeline beats an autonomous agent
+- [x] Workflows vs agents: when a fixed pipeline beats an autonomous agent → [lesson](lessons/2026-11-07-workflows-vs-agents.md)
 - [ ] Orchestration patterns: prompt chaining, routing, parallelisation
 - [ ] Orchestrator–worker and multi-agent designs (subagents, context isolation)
 - [ ] Evaluator–optimiser loops and self-correction
