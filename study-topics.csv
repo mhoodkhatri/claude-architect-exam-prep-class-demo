@@ -1,0 +1,4 @@
+topic,status,hours
+CI basics,done,2
+GitHub Actions,in-progress,3
+Claude Code in CI,todo,4
