@@ -16,6 +16,8 @@ This repo contains only Markdown files: notes, summaries, practice questions and
 claude-architect-exam-prep/
 ├── README.md           # This file
 ├── study-plan.md       # Schedule and milestones
+├── syllabus.md         # Topic checklist the nightly lesson workflow works through
+├── lessons/            # One lesson per night, written by Claude Code at 9 PM PKT
 ├── notes/              # One file per exam topic
 ├── practice/           # Practice questions and answers
 └── log.md              # Daily study log: what I covered and what to revisit

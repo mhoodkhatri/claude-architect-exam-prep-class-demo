@@ -3,9 +3,12 @@ name: Markdown only
 # Run for every branch:
 # - pushes to any branch
 # - pull requests targeting any branch
+# - manual / workflow-triggered runs (the Daily Lesson workflow starts this
+#   check on its lesson branches, since its own pushes can't trigger it)
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # The job only needs to read the code.
 permissions:
