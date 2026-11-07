@@ -1,0 +1,131 @@
+name: Daily Lesson
+
+# Every night at 9 PM Pakistan time (PKT = UTC+5, so 16:00 UTC), Claude Code
+# writes the next lesson from syllabus.md. The lesson arrives as a pull request
+# that merges itself once the "check-file-types" check passes.
+#
+# Note: GitHub may start scheduled runs a few minutes late when it is busy.
+on:
+  schedule:
+    - cron: "0 16 * * *"
+  workflow_dispatch: # "Run workflow" button for testing
+
+# Never run two lesson jobs at once.
+concurrency:
+  group: daily-lesson
+  cancel-in-progress: false
+
+permissions:
+  contents: write       # push the lesson branch
+  pull-requests: write  # open the PR and turn on auto-merge
+  actions: write        # start the Markdown-only check on the lesson branch
+
+jobs:
+  lesson:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Work out today's date (Pakistan time)
+        id: date
+        run: |
+          today=$(TZ=Asia/Karachi date +%F)
+          echo "today=$today" >> "$GITHUB_OUTPUT"
+          echo "branch=lesson/$today" >> "$GITHUB_OUTPUT"
+
+          # Skip if today's lesson is already on main or a PR for it is already open.
+          if ls lessons/"$today"-*.md >/dev/null 2>&1 \
+             || git ls-remote --exit-code --heads origin "lesson/$today" >/dev/null; then
+            echo "Today's lesson already exists. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif ! grep -q -- '- \[ \]' syllabus.md; then
+            echo "Every syllabus topic is done. Nothing to write."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write the lesson with Claude Code
+        if: steps.date.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: >-
+            --allowedTools "Read,Write,Edit,Glob,Grep"
+            --max-turns 20
+          prompt: |
+            You are writing tonight's study lesson for this repo, which is my prep
+            for the Claude Architect certification exam. Today's date is
+            ${{ steps.date.outputs.today }}.
+
+            1. Read syllabus.md and pick the FIRST topic marked `- [ ]`.
+            2. Look at the files in lessons/ so you build on earlier lessons and don't repeat them.
+            3. Create exactly one file: lessons/${{ steps.date.outputs.today }}-<topic-slug>.md
+               where <topic-slug> is a short lowercase-hyphenated version of the topic.
+               Structure it like this:
+               - `# <Topic>` title, then a line `Date: ${{ steps.date.outputs.today }}`, then the syllabus section it belongs to
+               - **Why it matters**: 2–3 sentences tying it to building real systems with Claude
+               - **Core concepts**: clear explanations with headings, about 400–700 words
+               - **Example**: a concrete, realistic example (a code or config snippet if it helps)
+               - **Common mistakes / exam traps**: 3–5 bullets
+               - **Check yourself**: 5 practice questions, with answers inside a
+                 `<details><summary>Answers</summary> ... </details>` block
+               - **Key takeaways**: 3–5 bullets
+            4. In syllabus.md, change that topic's `- [ ]` to `- [x]` and append
+               ` → [lesson](lessons/<the file name>)`. Change nothing else.
+
+            Rules: only create or edit Markdown files, only the two files above.
+            Do not run git or try to commit. A later step handles that.
+
+      - name: Check that only the expected files changed
+        if: steps.date.outputs.skip != 'true'
+        id: changes
+        run: |
+          git status --porcelain --untracked-files=all
+          changed=$(git status --porcelain --untracked-files=all | awk '{print $2}')
+          if [ -z "$changed" ]; then
+            echo "::error::Claude did not write a lesson."
+            exit 1
+          fi
+          unexpected=$(echo "$changed" | grep -vE '^(syllabus\.md|lessons/[^/]+\.md)$' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected files changed: $unexpected"
+            exit 1
+          fi
+          lesson=$(ls lessons/${{ steps.date.outputs.today }}-*.md 2>/dev/null | head -n1)
+          if [ -z "$lesson" ]; then
+            echo "::error::No lesson file for ${{ steps.date.outputs.today }} was created."
+            exit 1
+          fi
+          echo "lesson=$lesson" >> "$GITHUB_OUTPUT"
+          echo "title=$(head -n1 "$lesson" | sed 's/^# *//')" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, open an auto-merging PR, and start the Markdown check
+        if: steps.date.outputs.skip != 'true'
+        env:
+          BRANCH: ${{ steps.date.outputs.branch }}
+          TODAY: ${{ steps.date.outputs.today }}
+          LESSON: ${{ steps.changes.outputs.lesson }}
+          TITLE: ${{ steps.changes.outputs.title }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add syllabus.md lessons/
+          git commit -m "Add daily lesson for $TODAY: $TITLE"
+          git push origin "$BRANCH"
+
+          gh pr create --base main --head "$BRANCH" \
+            --title "Daily lesson $TODAY: $TITLE" \
+            --body "Nightly lesson written by Claude Code. New file: \`$LESSON\`. Ticks the topic off in \`syllabus.md\`. Merges itself once the Markdown-only check passes."
+
+          gh pr merge "$BRANCH" --auto --squash
+
+          # Changes pushed with GITHUB_TOKEN don't trigger other workflows, so start
+          # the required check ourselves. workflow_dispatch is the one exception GitHub allows.
+          gh workflow run markdown-only.yml --ref "$BRANCH"
