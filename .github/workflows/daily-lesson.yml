@@ -37,13 +37,14 @@ jobs:
         run: |
           today=$(TZ=Asia/Karachi date +%F)
           echo "today=$today" >> "$GITHUB_OUTPUT"
-          echo "branch=lesson/$today" >> "$GITHUB_OUTPUT"
+          # Every run gets its own branch name, so runs never clash.
+          echo "branch=lesson/$today-run-$GITHUB_RUN_ID" >> "$GITHUB_OUTPUT"
 
-          # Skip if today's lesson is already on main or a PR for it is already open.
-          # (A leftover branch with no PR, from an earlier failed run, does not count.)
-          open_pr=$(gh pr list --head "lesson/$today" --state open --json number --jq 'length')
-          if ls lessons/"$today"-*.md >/dev/null 2>&1 || [ "$open_pr" != "0" ]; then
-            echo "Today's lesson already exists. Skipping."
+          # The rule:
+          # - Nightly (scheduled) run: skip if the repo already has a lesson for today.
+          # - Manual run (Run workflow button): always write a new lesson.
+          if [ "${{ github.event_name }}" = "schedule" ] && ls lessons/"$today"-*.md >/dev/null 2>&1; then
+            echo "The repo already has a lesson for today. Skipping the nightly run."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           elif ! grep -q -- '- \[ \]' syllabus.md; then
             echo "Every syllabus topic is done. Nothing to write."
@@ -98,9 +99,10 @@ jobs:
             echo "::error::Unexpected files changed: $unexpected"
             exit 1
           fi
-          lesson=$(ls lessons/${{ steps.date.outputs.today }}-*.md 2>/dev/null | head -n1)
+          # The lesson is the NEW file in lessons/ (there may already be others from today).
+          lesson=$(git ls-files --others --exclude-standard lessons/ | head -n1)
           if [ -z "$lesson" ]; then
-            echo "::error::No lesson file for ${{ steps.date.outputs.today }} was created."
+            echo "::error::No new lesson file was created."
             exit 1
           fi
           echo "lesson=$lesson" >> "$GITHUB_OUTPUT"
@@ -119,8 +121,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add syllabus.md lessons/
           git commit -m "Add daily lesson for $TODAY: $TITLE"
-          # --force replaces a leftover branch from an earlier failed run today.
-          git push --force origin "$BRANCH"
+          git push origin "$BRANCH"
 
           gh pr create --base main --head "$BRANCH" \
             --title "Daily lesson $TODAY: $TITLE" \
