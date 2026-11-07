@@ -40,8 +40,9 @@ jobs:
           echo "branch=lesson/$today" >> "$GITHUB_OUTPUT"
 
           # Skip if today's lesson is already on main or a PR for it is already open.
-          if ls lessons/"$today"-*.md >/dev/null 2>&1 \
-             || git ls-remote --exit-code --heads origin "lesson/$today" >/dev/null; then
+          # (A leftover branch with no PR, from an earlier failed run, does not count.)
+          open_pr=$(gh pr list --head "lesson/$today" --state open --json number --jq 'length')
+          if ls lessons/"$today"-*.md >/dev/null 2>&1 || [ "$open_pr" != "0" ]; then
             echo "Today's lesson already exists. Skipping."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           elif ! grep -q -- '- \[ \]' syllabus.md; then
@@ -118,7 +119,8 @@ jobs:
           git checkout -b "$BRANCH"
           git add syllabus.md lessons/
           git commit -m "Add daily lesson for $TODAY: $TITLE"
-          git push origin "$BRANCH"
+          # --force replaces a leftover branch from an earlier failed run today.
+          git push --force origin "$BRANCH"
 
           gh pr create --base main --head "$BRANCH" \
             --title "Daily lesson $TODAY: $TITLE" \
