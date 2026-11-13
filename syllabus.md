@@ -8,7 +8,7 @@ Edit freely: reorder, add or remove topics. Keep the `- [ ]` / `- [x]` format so
 
 - [x] What an agent is: the agentic loop (model → tool call → result → model) → [lesson](lessons/2026-11-07-the-agentic-loop.md)
 - [x] Workflows vs agents: when a fixed pipeline beats an autonomous agent → [lesson](lessons/2026-11-07-workflows-vs-agents.md)
-- [ ] Orchestration patterns: prompt chaining, routing, parallelisation
+- [x] Orchestration patterns: prompt chaining, routing, parallelisation → [lesson](lessons/2026-11-14-orchestration-patterns.md)
 - [ ] Orchestrator–worker and multi-agent designs (subagents, context isolation)
 - [ ] Evaluator–optimiser loops and self-correction
 - [ ] Human-in-the-loop: approvals, checkpoints and stopping conditions
